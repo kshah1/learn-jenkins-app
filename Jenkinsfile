@@ -52,7 +52,7 @@ pipeline {
                     }
                 }
 
-                stage('E2E') {
+                stage('Local E2E') {
                     agent {
                         docker {
                             image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
@@ -60,6 +60,7 @@ pipeline {
                         }
                     }
                     steps {
+                        // E2E tests are being run on local deployment
                         sh '''
                             npm install serve
                             node_modules/.bin/serve -s build &
@@ -69,7 +70,7 @@ pipeline {
                     }
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local HTML Report', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                  }
@@ -94,5 +95,29 @@ pipeline {
                 '''
             }
         }
+
+        stage('Prod E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+            environment {
+                CI_ENVIRONMENT_URL = 'https://beamish-genie-a9d6be.netlify.app'
+            }
+            steps {
+                // E2E tests being run on prod deployment which is hoted by netlify
+                sh '''
+                    npx playwright test --reporter=html
+                '''
+            }
+            post {
+                always {
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'E2E HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            }
+        }
+
     }
 }

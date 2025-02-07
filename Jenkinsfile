@@ -21,9 +21,12 @@ pipeline {
                 }
             }
             steps {
-                sh '''
-                    aws --version
-                '''
+                withCredentials([usernamePassword(credentialsId: 'karan-aws', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                        aws --version
+                        aws s3 ls
+                    '''
+                }
             }
         }
         stage('Build') {

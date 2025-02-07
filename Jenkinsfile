@@ -6,6 +6,9 @@ pipeline {
         // NETLIFY_AUTH_TOKEN = credentials('netlify-token')
         REACT_APP_VERSION = "1.0.${BUILD_ID}"
         AWS_DEFAULT_REGION = 'ap-south-1'
+        AWS_ECS_CLUSTER = 'LearnJenkinsApp-Cluster-Prod'
+        AWS_ECS_SERVICE = 'LearnJenkinsApp-Service-Prod'
+        AWS_ECS_TASK_DEFINITION = 'LearnJenkinsApp-TaskDefinition-Prod'
     }
 
     stages {
@@ -53,7 +56,8 @@ pipeline {
                         # aws s3 sync build s3://${AWS_S3_BUCKET}
                         LATEST_TD_REVISION=$(aws ecs register-task-definition --cli-input-json "file://aws/task-definition-prod.json" | jq '.taskDefinition.revision')
                         echo ${LATEST_TD_REVISION}
-                        aws ecs update-service --cluster LearnJenkinsApp-Cluster-Prod --service LearnJenkinsApp-Service-Prod --task-definition LearnJenkinsApp-TaskDefinition-Prod:${LATEST_TD_REVISION}
+                        aws ecs update-service --cluster ${AWS_ECS_CLUSTER} --service ${AWS_ECS_SERVICE} --task-definition ${AWS_ECS_TASK_DEFINITION}:${LATEST_TD_REVISION}
+                        aws ecs wait services-stable --cluster ${AWS_ECS_CLUSTER} --services ${AWS_ECS_SERVICE}
                     '''
                 }
             }

@@ -38,47 +38,49 @@ pipeline {
         stage("Build Docker image") {
             agent {
                 docker {
-                    image 'amazon/aws-cli'
+                    // image 'amazon/aws-cli'
+                    image 'my-aws-cli'
                     args "-u root -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=''"
                     reuseNode true
                 }
             }
             steps {
                 sh '''
-                    amazon-linux-extras install docker
+                    # amazon-linux-extras install docker
                     docker build -t myjenkinsapp .
                 '''
 
                 
             }
         }
-        // stage('Deploy to AWS') {
-        //     agent {
-        //         docker {
-        //             image 'amazon/aws-cli'
-        //             args "-u root --entrypoint=''"
-        //             reuseNode true
-        //         }
-        //     }
-        //     // environment {
-        //     //     AWS_S3_BUCKET = 'learn-jenkins-202502071003'
-        //     // }
-        //     steps {
-        //         withCredentials([usernamePassword(credentialsId: 'karan-aws', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-        //              sh '''
-        //                 aws --version
-        //                 yum install jq -y
-        //                 # echo "Hello S3!" > index.html
-        //                 # aws s3 cp index.html s3://${AWS_S3_BUCKET}/index.html
-        //                 # aws s3 sync build s3://${AWS_S3_BUCKET}
-        //                 LATEST_TD_REVISION=$(aws ecs register-task-definition --cli-input-json "file://aws/task-definition-prod.json" | jq '.taskDefinition.revision')
-        //                 echo ${LATEST_TD_REVISION}
-        //                 aws ecs update-service --cluster ${AWS_ECS_CLUSTER} --service ${AWS_ECS_SERVICE} --task-definition ${AWS_ECS_TASK_DEFINITION}:${LATEST_TD_REVISION}
-        //                 aws ecs wait services-stable --cluster ${AWS_ECS_CLUSTER} --services ${AWS_ECS_SERVICE}
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('Deploy to AWS') {
+            agent {
+                docker {
+                    // image 'amazon/aws-cli'
+                    image 'my-aws-cli'
+                    args "-u root --entrypoint=''"
+                    reuseNode true
+                }
+            }
+            // environment {
+            //     AWS_S3_BUCKET = 'learn-jenkins-202502071003'
+            // }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'karan-aws', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                     sh '''
+                        aws --version
+                        # yum install jq -y
+                        # echo "Hello S3!" > index.html
+                        # aws s3 cp index.html s3://${AWS_S3_BUCKET}/index.html
+                        # aws s3 sync build s3://${AWS_S3_BUCKET}
+                        LATEST_TD_REVISION=$(aws ecs register-task-definition --cli-input-json "file://aws/task-definition-prod.json" | jq '.taskDefinition.revision')
+                        echo ${LATEST_TD_REVISION}
+                        aws ecs update-service --cluster ${AWS_ECS_CLUSTER} --service ${AWS_ECS_SERVICE} --task-definition ${AWS_ECS_TASK_DEFINITION}:${LATEST_TD_REVISION}
+                        aws ecs wait services-stable --cluster ${AWS_ECS_CLUSTER} --services ${AWS_ECS_SERVICE}
+                    '''
+                }
+            }
+        }
 
         
         // stage('Tests') {
